@@ -420,7 +420,7 @@ bool atci_gpio_get(twr_atci_param_t *param)
 
     value = twr_gpio_get_input(channel);
 
-    twr_atci_printfln("$GPIOGET: %d", value);
+    twr_atci_printfln("$GPIOG: %d", value);
 
     return true;
 }

@@ -49,10 +49,10 @@ OK
 Read value
 ```
 > AT$GPIOG=19
-$GPIOGET: 0
+$GPIOG: 0
 OK
 > AT$GPIOG=19
-$GPIOGET: 1
+$GPIOG: 1
 OK
 ```
 
