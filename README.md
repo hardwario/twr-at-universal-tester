@@ -9,6 +9,53 @@
 
 This repository contains firmware at universal tester.
 
+## Commands
+```
+> AT$HELP
+ATI Request product information
+AT+CLAC List all available AT commands
+AT$ADC Read ADC value
+AT$ADCV Read ADC voltage
+AT$GPIOC Configure GPIO pin
+AT$GPIOG Get GPIO pin value
+AT$GPIOS Set GPIO pin value
+AT$I2CMR I2C memory read
+AT$I2CMW I2C memory write
+AT$I2CSCAN Scan I2C bus
+AT$RELAY Control relay
+AT$REBOOT Reboot
+AT$HELP This help
+OK
+```
+
+## I2C Scan
+
+```
+> AT$I2CSCAN=0
+$SCAN: 0x19,0x49
+OK
+```
+
+## GPIO
+Set value
+for example: On / Off led on Core module
+```
+> AT$GPIOS=18,1
+OK
+> AT$GPIOS=18,0
+OK
+```
+
+Read value
+```
+> AT$GPIOG=19
+$GPIOGET: 0
+OK
+> AT$GPIOG=19
+$GPIOGET: 1
+OK
+```
+
 
 ## License
 

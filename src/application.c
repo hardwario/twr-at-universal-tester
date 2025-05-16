@@ -355,6 +355,159 @@ bool atci_adc_v(twr_atci_param_t *param)
     return true;
 }
 
+static bool get_gpio_channel(twr_atci_param_t *param, twr_gpio_channel_t *channel)
+{
+    uint32_t ch;
+
+    if (!twr_atci_get_uint(param, &ch))
+    {
+        return false;
+    }
+
+    if (ch > 20)
+    {
+        return false;
+    }
+
+    *channel = (twr_gpio_channel_t)ch;
+
+    return true;
+}
+
+bool atci_gpio_set(twr_atci_param_t *param)
+{
+    twr_gpio_channel_t channel;
+    uint32_t value;
+
+    if (!get_gpio_channel(param, &channel))
+    {
+        twr_log_error("Invalid parse channel number");
+        return false;
+    }
+
+    if (!twr_atci_is_comma(param))
+    {
+        twr_log_error("Invalid parse comma");
+        return false;
+    }
+
+    if (!twr_atci_get_uint(param, &value))
+    {
+        twr_log_error("Invalid parse value");
+        return false;
+    }
+
+    twr_gpio_set_pull(channel, TWR_GPIO_PULL_NONE);
+    twr_gpio_set_mode(channel, TWR_GPIO_MODE_OUTPUT);
+
+    twr_gpio_set_output(channel, value);
+
+    return true;
+}
+
+bool atci_gpio_get(twr_atci_param_t *param)
+{
+    twr_gpio_channel_t channel;
+    uint32_t value;
+
+    if (!get_gpio_channel(param, &channel))
+    {
+        twr_log_error("Invalid parse channel number");
+        return false;
+    }
+
+    twr_gpio_set_mode(channel, TWR_GPIO_MODE_INPUT);
+
+    value = twr_gpio_get_input(channel);
+
+    twr_atci_printfln("$GPIOGET: %d", value);
+
+    return true;
+}
+
+bool atci_gpio_config(twr_atci_param_t *param)
+{
+    twr_gpio_channel_t channel;
+    char str_mode[10];
+    char str_pull[10];
+
+    twr_gpio_mode_t mode = TWR_GPIO_MODE_INPUT;
+    twr_gpio_pull_t pull = TWR_GPIO_PULL_NONE;
+
+    if (!get_gpio_channel(param, &channel))
+    {
+        twr_log_error("Invalid parse channel number");
+        return false;
+    }
+
+    if (!twr_atci_is_comma(param))
+    {
+        twr_log_error("Invalid parse comma");
+        return false;
+    }
+
+    if (!twr_atci_get_string(param, str_mode, sizeof(str_mode)))
+    {
+        twr_log_error("Invalid parse mode");
+        return false;
+    }
+
+    if (strcmp(str_mode, "input") == 0)
+    {
+        mode = TWR_GPIO_MODE_INPUT;
+    }
+    else if (strcmp(str_mode, "output") == 0)
+    {
+        mode = TWR_GPIO_MODE_OUTPUT;
+    }
+    else if (strcmp(str_mode, "analog") == 0)
+    {
+        mode = TWR_GPIO_MODE_ANALOG;
+    }
+    else
+    {
+        twr_log_error("Invalid mode");
+        return false;
+    }
+
+    if (mode != TWR_GPIO_MODE_OUTPUT)
+    {
+        if (!twr_atci_is_comma(param))
+        {
+            twr_log_error("Invalid parse comma");
+            return false;
+        }
+        if (!twr_atci_get_string(param, str_pull, sizeof(str_pull)))
+        {
+            twr_log_error("Invalid parse pull");
+            return false;
+        }
+
+        if (strcmp(str_pull, "none") == 0)
+        {
+            pull = TWR_GPIO_PULL_NONE;
+        }
+        else if (strcmp(str_pull, "up") == 0)
+        {
+            pull = TWR_GPIO_PULL_UP;
+        }
+        else if (strcmp(str_pull, "down") == 0)
+        {
+            pull = TWR_GPIO_PULL_DOWN;
+        }
+        else
+        {
+            twr_log_error("Invalid pull");
+            return false;
+        }
+    }
+
+    twr_gpio_set_mode(channel, mode);
+    twr_gpio_set_pull(channel, pull);
+
+    return true;
+}
+
 bool atci_relay(twr_atci_param_t *param)
 {
     uint32_t relay;
@@ -460,11 +613,14 @@ void application_init(void)
     static twr_atci_command_t commands[] = {
         {"I", at_i, NULL, NULL, NULL, "Request product information"},
         TWR_ATCI_COMMAND_CLAC,
+        {"$ADC", NULL, atci_adc, NULL, NULL, "Read ADC value"},
+        {"$ADCV", NULL, atci_adc_v, NULL, NULL, "Read ADC voltage"},
+        {"$GPIOC", NULL, atci_gpio_config, NULL, NULL, "Configure GPIO pin"},
+        {"$GPIOG", NULL, atci_gpio_get, NULL, NULL, "Get GPIO pin value"},
+        {"$GPIOS", NULL, atci_gpio_set, NULL, NULL, "Set GPIO pin value"},
         {"$I2CMR", NULL, atci_i2c_memory_read, NULL, NULL, "I2C memory read"},
         {"$I2CMW", NULL, atci_i2c_memory_write, NULL, NULL, "I2C memory write"},
         {"$I2CSCAN", NULL, atci_i2c_scan, NULL, NULL, "Scan I2C bus"},
-        {"$ADCV", NULL, atci_adc_v, NULL, NULL, "Read ADC voltage"},
-        {"$ADC", NULL, atci_adc, NULL, NULL, "Read ADC value"},
         {"$RELAY", NULL, atci_relay, NULL, NULL, "Control relay"},
         {"$REBOOT", at_reboot, NULL, NULL, NULL, "Reboot"},
         TWR_ATCI_COMMAND_HELP};
